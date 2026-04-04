@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ── 3. Active nav link on scroll ────────────────────── */
   const sections = document.querySelectorAll('section[id]');
-  const navLinks  = document.querySelectorAll('.nav-links a');
+  const navLinks = document.querySelectorAll('.nav-links a');
 
   const sectionObserver = new IntersectionObserver(entries => {
     entries.forEach(entry => {
@@ -90,29 +90,35 @@ document.addEventListener('DOMContentLoaded', () => {
   }, { threshold: 0.4 });
   heroObserver.observe(heroSection);
 
-  /* ── 6. Contact form validation ───────────────────────── */
+  /* ── 6. Contact form validation + Google Sheets submission ── */
+  const SHEET_URL = "https://script.google.com/macros/s/AKfycbx-tGGsHu95bfoj8U9zwp307TfJZJuCrl9M-QxV-6lUUz3cnsUpdF5BD7RlUel7yrKKSQ/exec";
+
   const form = document.getElementById('inquiryForm');
+  const successBox = document.getElementById('formSuccess');
+  const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+
   if (form) {
-    form.addEventListener('submit', e => {
+    form.addEventListener('submit', async e => {
       e.preventDefault();
       let valid = true;
 
       const fields = [
-        { id: 'fname',   label: 'Name',    min: 2 },
-        { id: 'fphone',  label: 'Phone',   min: 7 },
-        { id: 'fmessage',label: 'Message', min: 10 }
+        { id: 'fname', label: 'Name', min: 2 },
+        { id: 'fphone', label: 'Phone', min: 7 },
+        { id: 'fmessage', label: 'Message', min: 10 }
       ];
 
       fields.forEach(({ id, label, min }) => {
         const group = document.getElementById(id).closest('.form-group');
-        const val   = document.getElementById(id).value.trim();
-        const err   = group.querySelector('.form-error-msg');
+        const val = document.getElementById(id).value.trim();
+        const err = group.querySelector('.form-error-msg');
         if (val.length < min) {
           group.classList.add('error');
           err.textContent = `${label} must be at least ${min} characters.`;
           valid = false;
         } else {
           group.classList.remove('error');
+          if (err) err.textContent = '';
         }
       });
 
@@ -120,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const emailEl = document.getElementById('femail');
       if (emailEl && emailEl.value.trim()) {
         const emailGroup = emailEl.closest('.form-group');
-        const emailErr   = emailGroup.querySelector('.form-error-msg');
+        const emailErr = emailGroup.querySelector('.form-error-msg');
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(emailEl.value.trim())) {
           emailGroup.classList.add('error');
@@ -128,19 +134,67 @@ document.addEventListener('DOMContentLoaded', () => {
           valid = false;
         } else {
           emailGroup.classList.remove('error');
+          if (emailErr) emailErr.textContent = '';
         }
       }
 
-      if (valid) {
+      if (!valid) return;
+
+      // ── Loading state ──
+      const originalLabel = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '⏳ Sending…';
+
+      const formData = new FormData(form);
+      const payload = {
+        name: formData.get('name'),
+        phone: formData.get('phone'),
+        email: formData.get('email'),
+        product: formData.get('product'),
+        message: formData.get('message')
+      };
+
+      try {
+        // Google Apps Script returns a 302 redirect on POST requests.
+        // Using mode:'no-cors' + URLSearchParams lets the data reach the sheet,
+        // but the response is opaque (unreadable) — so we show success optimistically.
+        await fetch(SHEET_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams(payload)
+        });
+
+        // Data sent successfully — show success state
+        form.reset();
         form.style.display = 'none';
-        document.getElementById('formSuccess').style.display = 'block';
+        successBox.style.display = 'flex';
+
+        // Auto-hide after 6 seconds and restore form
+        setTimeout(() => {
+          successBox.style.display = 'none';
+          form.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalLabel;
+        }, 6000);
+
+      } catch (error) {
+        console.error('Form submission error:', error);
+        alert('Submission failed. Please check your connection and try again.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalLabel;
       }
     });
 
-    // Clear error on input
+    // Clear error styling on input
     form.querySelectorAll('input, textarea').forEach(input => {
       input.addEventListener('input', () => {
-        input.closest('.form-group').classList.remove('error');
+        const group = input.closest('.form-group');
+        if (group) {
+          group.classList.remove('error');
+          const err = group.querySelector('.form-error-msg');
+          if (err) err.textContent = '';
+        }
       });
     });
   }

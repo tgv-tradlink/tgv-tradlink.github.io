@@ -531,16 +531,16 @@
             </div>
 
             <!-- Form -->
-            <form id="inquiryForm" novalidate>
+            <form id="inquiryForm">
               <div class="form-row">
                 <div class="form-group">
                   <label for="fname">Full Name *</label>
-                  <input type="text" id="fname" name="name" placeholder="Your name" />
+                  <input type="text" id="fname" name="name" placeholder="Your name" required />
                   <span class="form-error-msg"></span>
                 </div>
                 <div class="form-group">
                   <label for="fphone">Phone *</label>
-                  <input type="tel" id="fphone" name="phone" placeholder="+91 XXXXX XXXXX" />
+                  <input type="tel" id="fphone" name="phone" placeholder="+91 XXXXX XXXXX" required />
                   <span class="form-error-msg"></span>
                 </div>
               </div>
@@ -553,9 +553,9 @@
                 <label for="fproduct">Product Interest</label>
                 <select id="fproduct" name="product">
                   <option value="">— Select a category —</option>
-                  <option>Hose Clamps</option>
-                  <option>U-Bolts</option>
-                  <option>EPDM Rubber Products</option>
+                  <option>Split Clamp With Epdm rubber</option>
+                  <option>U' Bolt Clamp With Epdm Rubber</option>
+                  <option>LEAF CLAMP</option>
                   <option>Saddle Clamps</option>
                   <option>Threaded Rods</option>
                   <option>Pipe Hangers</option>
@@ -566,8 +566,8 @@
               </div>
               <div class="form-group">
                 <label for="fmessage">Your Message *</label>
-                <textarea id="fmessage" name="message"
-                  placeholder="Describe your requirement, quantity, size, etc."></textarea>
+                <textarea id="fmessage" name="message" placeholder="Describe your requirement, quantity, size, etc."
+                  required></textarea>
                 <span class="form-error-msg"></span>
               </div>
               <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
