@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
   heroObserver.observe(heroSection);
 
   /* ── 6. Contact form validation + Google Sheets submission ── */
-  const SHEET_URL = "https://script.google.com/macros/s/AKfycbx-tGGsHu95bfoj8U9zwp307TfJZJuCrl9M-QxV-6lUUz3cnsUpdF5BD7RlUel7yrKKSQ/exec";
+  const SHEET_URL = "https://script.google.com/macros/s/AKfycbwfnvO2rkMcCZu308u44b2YkR6YFYwG59AnvW_S1jmooQb9PrPFXtmbCE7lR04-yX1sCA/exec";
 
   const form = document.getElementById('inquiryForm');
   const successBox = document.getElementById('formSuccess');
