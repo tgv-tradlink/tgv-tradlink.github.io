@@ -124,43 +124,63 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ── Price list: category jump + search ───────────── */
+  /* ── Price list: smooth category jump, scroll-spy, search ── */
   const plFilters = $('#plFilters');
   const plSearch = $('#plSearch');
   if (plFilters || plSearch) {
     const sections = $$('.cat-section');
     const items = $$('.pl-item');
     const empty = $('#plEmpty');
-    let cat = 'all';
-    const apply = () => {
-      const q = (plSearch ? plSearch.value : '').trim().toLowerCase();
+    const toolbar = $('.toolbar');
+    const chips = plFilters ? $$('.chip', plFilters) : [];
+    const setChip = f => chips.forEach(c => { const on = c.dataset.filter === f; c.classList.toggle('on', on); c.setAttribute('aria-pressed', on); });
+    const offset = () => (header ? header.offsetHeight : 0) + (toolbar ? toolbar.offsetHeight : 0) + 12;
+    let jumping = false, jumpTimer;
+
+    const glideTo = el => {
+      const top = el.getBoundingClientRect().top + window.scrollY - offset();
+      jumping = true; clearTimeout(jumpTimer);
+      window.scrollTo({ top, behavior: reduceMotion ? 'auto' : 'smooth' });
+      jumpTimer = setTimeout(() => { jumping = false; }, 900);
+    };
+
+    if (plFilters) plFilters.addEventListener('click', e => {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      const f = chip.dataset.filter;
+      setChip(f);
+      const target = f === 'all' ? sections[0] : $('#' + f);
+      if (target && !target.hidden) glideTo(target);
+    });
+
+    // highlight the category currently on screen
+    const spy = () => {
+      if (jumping || (plSearch && plSearch.value.trim())) return;
+      const line = offset() + 40;
+      let current = 'all';
+      sections.forEach(sec => { if (!sec.hidden && sec.getBoundingClientRect().top <= line) current = sec.dataset.cat; });
+      if (sections[0] && sections[0].getBoundingClientRect().top > line) current = 'all';
+      setChip(current);
+    };
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (!ticking) { requestAnimationFrame(() => { spy(); ticking = false; }); ticking = true; }
+    }, { passive: true });
+
+    // search filters products
+    items.forEach(it => { it.dataset.search = it.textContent.replace(/\s+/g, ' ').toLowerCase(); });
+    if (plSearch) plSearch.addEventListener('input', () => {
+      const q = plSearch.value.trim().toLowerCase();
       let shown = 0;
       sections.forEach(sec => {
-        const catOk = cat === 'all' || sec.dataset.cat === cat;
         let visible = 0;
-        $$('.pl-item', sec).forEach(it => {
-          const ok = catOk && (!q || it.dataset.search.includes(q));
-          it.hidden = !ok;
-          if (ok) visible++;
-        });
+        $$('.pl-item', sec).forEach(it => { const ok = !q || it.dataset.search.includes(q); it.hidden = !ok; if (ok) visible++; });
         sec.hidden = visible === 0;
         shown += visible;
       });
       if (empty) empty.classList.toggle('show', shown === 0);
-    };
-    items.forEach(it => { it.dataset.search = it.textContent.replace(/\s+/g, ' ').toLowerCase(); });
-    if (plFilters) plFilters.addEventListener('click', e => {
-      const chip = e.target.closest('.chip');
-      if (!chip) return;
-      cat = chip.dataset.filter;
-      $$('.chip', plFilters).forEach(c => { c.classList.toggle('on', c === chip); c.setAttribute('aria-pressed', c === chip); });
-      apply();
-      const anchor = $('#pricelist');
-      if (anchor && anchor.getBoundingClientRect().top < 0) {
-        window.scrollTo({ top: anchor.getBoundingClientRect().top + window.scrollY - (header ? header.offsetHeight : 0), behavior: reduceMotion ? 'auto' : 'smooth' });
-      }
+      if (q) setChip('all');
     });
-    if (plSearch) plSearch.addEventListener('input', apply);
   }
 
   /* ── Pre-fill enquiry product from links (?product=) ─ */
